@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35806.99 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Onnx Runtime w. Yolo-Nas OD Model", "Onnx Runtime w. Yolo-Nas OD Model.csproj", "{EFD192F6-2414-4EAC-B44D-2A4B7576BEC7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EFD192F6-2414-4EAC-B44D-2A4B7576BEC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFD192F6-2414-4EAC-B44D-2A4B7576BEC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFD192F6-2414-4EAC-B44D-2A4B7576BEC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFD192F6-2414-4EAC-B44D-2A4B7576BEC7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CC6293D0-95C0-411A-A1F9-261587DE759C}
+	EndGlobalSection
+EndGlobal
