@@ -21,6 +21,7 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
             "border_water_meter_number"
         };
 
+        // The colors associated with each label for visualization
         public static readonly Color[] LabelColors =
         {
             Color.Gray,    
@@ -59,11 +60,19 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
                @"C:\Users\hp\Documents\Proyecto Huella Hidrica\OneDrive_1_6-14-2025\thumbnail_image002.jpg",
                @"C:\Users\hp\Documents\Proyecto Huella Hidrica\OneDrive_1_6-14-2025\069657.jpg",
                @"C:\Users\hp\Documents\Proyecto Huella Hidrica\OneDrive_1_6-14-2025\Flujometro 2 copy.jpg",
-               @"C:\Users\hp\Documents\Proyecto Huella Hidrica\OneDrive_1_6-14-2025\Flujometro 1 zoom.JPEG"
+               @"C:\Users\hp\Documents\Proyecto Huella Hidrica\OneDrive_1_6-14-2025\Flujometro 1 zoom.JPEG",
+               @"C:\Users\hp\Documents\Proyecto Huella Hidrica\OneDrive_1_6-14-2025\Flujometro 12323 zoom.JPEG" // Test image with an invalid path
+
 
             };
 
         // The path to the ONNX model file 
         public static readonly string ModelPath = @"C:\Users\hp\Downloads\yolo-nas-onnx\yolo_nas_s_2.onnx";
+
+        // The path to the output folder where results will be saved
+        public static readonly string OutputFolder = @"C:\Users\hp\Desktop\test results\test 5";
+
+        // Confidence threshold for filtering predictions
+        public static float confidenceThreshold = 0.4f;
     }
 }
