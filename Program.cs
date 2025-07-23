@@ -10,7 +10,7 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 {
     class Program
     {
-        public static string ExtractDigits(string modelPath, string imagePath)
+        public static string ExtractDigits(string modelPath, string imagePath, int imageNumber)
         {
             try
             {
@@ -84,6 +84,9 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
                 {
                     long clsId = classes[i];
                     float score = scores[i];
+
+                    Console.WriteLine($"[ALL DETECTIONS] class={clsId}, score={score:F2}");//
+
                     // Class 1–10 map to digits 0–9; index 0 is reserved label "digits"
                     // Filter out predictions with low confidence and class IDs that aren't numbers 0-9
                     if (clsId >= 1 && clsId <= 10 && score >= LabelMap.confidenceThreshold)
@@ -106,10 +109,9 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 
                 var orderedDigits = digits.OrderBy(d => d.xCenter).Select(d => d.digit).ToArray();
                 string sortedDigits = string.Join("", orderedDigits);
-                Guid guid = Guid.NewGuid();
 
                 // Save image with bounding boxes
-                DrawDetections(image, string.Concat(LabelMap.OutputFolder, "\\", sortedDigits.ToString(), "_", guid.ToString().Substring(0, 7), ".jpeg"), detections);
+                DrawDetections(image, string.Concat(LabelMap.OutputFolder, "\\", imageNumber, "_", sortedDigits.ToString(), "_", Guid.NewGuid().ToString().Substring(0, 7), ".jpeg"), detections);
 
                 return sortedDigits;
             }
@@ -204,14 +206,30 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
             Stopwatch stopwatch = new();
             int totalTime = 0, i = 0;        
             Console.WriteLine("Starting Water Meter Reading Detection...");
-            foreach (string imagePath in LabelMap.Images)
-            {                
-                Console.WriteLine($"\nProcessing {i + 1} of {LabelMap.Images.Length} images: {Path.GetFileName(imagePath)}");
+
+            // Replace with your actual image folder path
+            string imageFolderPath = LabelMap.InputFolder; // Or provide a direct string path
+
+            // Filter for JPEG and PNG files (you can modify this as needed)
+            var imagePaths = Directory.GetFiles(imageFolderPath, "*.*")
+                                      .Where(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                                                  f.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+                                                  f.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                                      .ToArray();
+
+            foreach (string imagePath in imagePaths)
+                //foreach (string imagePath in LabelMap.Images)
+            { 
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"\nProcessing {i + 1} of {imagePaths.Length} images: {Path.GetFileName(imagePath)}");
+
+                //Console.WriteLine($"\nProcessing {i + 1} of {LabelMap.Images.Length} images: {Path.GetFileName(imagePath)}");
+                Console.ResetColor();
 
                 //Start stopwatch to measure inference time
                 stopwatch.Start();
 
-                string result = ExtractDigits(LabelMap.ModelPath, imagePath);
+                string result = ExtractDigits(LabelMap.ModelPath, imagePath, i+1);
                 Console.WriteLine($"\nDetected Water Meter Reading: {result}");
                 stopwatch.Stop();
                 Console.WriteLine($"Inference Time: {stopwatch.ElapsedMilliseconds} ms");

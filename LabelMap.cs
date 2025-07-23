@@ -66,13 +66,22 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 
             };
 
+        public static string InputFolder = @"C:\Users\hp\Pictures\water-meter-detection.v1i.yolov11\test\images";
+
+
         // The path to the ONNX model file 
-        public static readonly string ModelPath = @"C:\Users\hp\Downloads\yolo-nas-onnx\yolo_nas_s_2.onnx";
+        //public static readonly string ModelPath = @"C:\Users\hp\Downloads\yolo-nas-onnx\yolo_nas_s_2.onnx";
+        //public static readonly string ModelPath = @"C:\Users\hp\Downloads\yolo_nas_s_2.5.onnx";
+        public static readonly string ModelPath = @"C:\Users\hp\Downloads\yolo_nas_s_3.onnx";
+
 
         // The path to the output folder where results will be saved
-        public static readonly string OutputFolder = @"C:\Users\hp\Desktop\test results\test 5";
+        public static readonly string OutputFolder = @"C:\Users\hp\Desktop\test results\test";
+
+
+
 
         // Confidence threshold for filtering predictions
-        public static float confidenceThreshold = 0.4f;
+        public static float confidenceThreshold = 0.45f;
     }
 }
