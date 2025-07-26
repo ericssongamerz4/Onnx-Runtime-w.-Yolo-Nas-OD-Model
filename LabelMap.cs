@@ -76,12 +76,9 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 
 
         // The path to the output folder where results will be saved
-        public static readonly string OutputFolder = @"C:\Users\hp\Desktop\test results\test";
-
-
-
+        public static readonly string OutputFolder = @"C:\Users\hp\Desktop\test results\yolo-nas-v3-2234";
 
         // Confidence threshold for filtering predictions
-        public static float confidenceThreshold = 0.45f;
+        public static float confidenceThreshold = 0.5f;
     }
 }
