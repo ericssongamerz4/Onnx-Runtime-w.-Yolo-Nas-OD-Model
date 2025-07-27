@@ -4,17 +4,14 @@ using SixLabors.ImageSharp;
 
 namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 {
-    public class ModelInference
+    public class Inference
     {
-        public static (string? sortedDigits, List<(RectangleF box, string label, float score)>? detections) ExtractDigits(string modelPath, DenseTensor<byte> inputTensor)
+
+        public static (string? sortedDigits, List<(RectangleF box, string label, float score)>? detections)
+            ExtractDigits(string modelPath, DenseTensor<byte> inputTensor, InferenceSession session)
         {
             try
             {
-                // Load the ONNX model and run inference session
-                using var session = new InferenceSession(modelPath);
-
-                //Get the input name from the session metadata
-                // The input name is usually the first key in the session's input metadata
                 string inputName = session.InputMetadata.Keys.First();
 
                 var inputs = new List<NamedOnnxValue>
@@ -43,7 +40,7 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 #endif
                     // Class 1–10 map to digits 0–9; index 0 is reserved label "digits"
                     // Filter out predictions with low confidence and class IDs that aren't numbers 0-9
-                    if (clsId >= 1 && clsId <= 10 && score >= LabelMap.confidenceThreshold)
+                    if (clsId >= 1 && clsId <= 10 && score >= Config.confidenceThreshold)
                     {
                         float x1 = boxes[i * 4];
                         float y1 = boxes[i * 4 + 1];
@@ -52,7 +49,7 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 
                         float xCenter = (x1 + x2) / 2.0f;
                         // Convert class ID to digit label, assuming class IDs 1-10 correspond to digits 0-9 and there is a safeguard for unknown classes
-                        string digit = LabelMap.Labels.ElementAtOrDefault((int)clsId) ?? "unknown";
+                        string digit = Config.Labels.ElementAtOrDefault((int)clsId) ?? "unknown";
 
                         digits.Add((xCenter, digit));
 
@@ -62,9 +59,8 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
                 }
 
                 // Apply class-agnostic NMS
-                var filteredDetections = ModelPostProcessing.ApplyClassAgnosticNMS(detections, iouThreshold: 0.5f);
+                var filteredDetections = Postprocessing.ApplyClassAgnosticNMS(detections);
 
-                var orderedDigits1 = digits.OrderBy(d => d.xCenter).Select(d => d.digit).ToArray();
                 var orderedDigits = filteredDetections.Select(d => ((d.box.Left + d.box.Right) / 2f, d.label))
                     .OrderBy(d => d.Item1)
                     .Select(d => d.label)
@@ -82,5 +78,20 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
                 return (null, null);
             }
         }
+
+        public static void WarmUpSession(InferenceSession session)
+        {
+            string inputName = session.InputMetadata.Keys.First();
+
+            var inputs = new List<NamedOnnxValue>
+            {
+                NamedOnnxValue.CreateFromTensor(inputName, Config.inputTensor)
+            };
+
+            // Run inference once to warm up
+            using var _ = session.Run(inputs);
+        }
+
+
     }
 }

@@ -6,29 +6,23 @@ using SixLabors.ImageSharp.Processing;
 
 namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 {
-    public class ModelPostProcessing
+    public class Postprocessing
     {
         public static void DrawDetections(Image<Rgb24> image, string outputPath, List<(RectangleF box, string label, float score)> detections)
         {
-            var font = SystemFonts.Families.FirstOrDefault().CreateFont(16);
+            Font font = SystemFonts.Families.FirstOrDefault().CreateFont(16);
 
-            foreach (var det in detections)
+            foreach (var (box, label, score) in detections)
             {
-                // Find the index of the label in Labels array
-                int labelIndex = Array.IndexOf(LabelMap.Labels, det.label);
-
-                // Default to Red if label not found (or use another fallback)
-                Color color = labelIndex >= 0 && labelIndex < LabelMap.LabelColors.Length
-                    ? LabelMap.LabelColors[labelIndex]
-                    : Color.Red;
+                Color color = Config.LabelColorsDict.TryGetValue(label, out var c) ? c : Color.Red;
 
                 var pen = Pens.Solid(color, 4);
 
                 image.Mutate(x =>
                 {
-                    x.Draw(pen, det.box);
-                    x.DrawText($"{det.label} {det.score:F2}", font, color,
-                        new PointF(det.box.X, det.box.Y - 20));
+                    x.Draw(pen, box);
+                    x.DrawText($"{label} {score:F2}", font, color,
+                        new PointF(box.X, box.Y - 20));
                 });
             }
 
@@ -54,17 +48,14 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
         }
 
         public static List<(RectangleF box, string label, float score)> ApplyClassAgnosticNMS(
-            List<(RectangleF box, string label, float score)> detections,
-            float iouThreshold = 0.5f)
+            List<(RectangleF box, string label, float score)> detections)
         {
-            // 1. Sort all detections by descending score
             var sorted = detections
                 .OrderByDescending(d => d.score)
                 .ToList();
 
             var results = new List<(RectangleF, string, float)>();
 
-            // 2. Iterate: pick highest-score box, remove any with IoU ≥ threshold
             while (sorted.Count > 0)
             {
                 var current = sorted[0];
@@ -72,7 +63,7 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
                 sorted.RemoveAt(0);
 
                 sorted = sorted
-                    .Where(d => ComputeIoU(current.box, d.box) < iouThreshold)
+                    .Where(d => ComputeIoU(current.box, d.box) < Config.iouThreshold)
                     .ToList();
             }
 

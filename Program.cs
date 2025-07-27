@@ -12,54 +12,35 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 {
     class Program
     {
-        public static string ExtractDigits(string modelPath, string imagePath, int imageNumber)
+
+        public static string ExecuteModel(string modelPath, string imagePath, int imageNumber, InferenceSession session)
         {
+            // Check if the image file exists
+            if (!File.Exists(imagePath))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Image file not found: {imagePath}");
+                Console.ResetColor();
+                return string.Empty;
+            }
+
             try
             {
-                #region Validation
-                // Check if the model file exists
-                if (!File.Exists(modelPath))
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"Model file not found: {modelPath}");
-                    Console.ResetColor();
-                    return "";
-                }
-                // Check if the image file exists
-                if (!File.Exists(imagePath))
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"Image file not found: {imagePath}");
-                    Console.ResetColor();
-                    return "";
-                }
-
-                // Ensure the output directory exists and create it if it doesn't
-                if (!Directory.Exists(LabelMap.OutputFolder))
-                {
-                    Directory.CreateDirectory(LabelMap.OutputFolder);
-                }
-
-                #endregion
-
-                #region Model Preprocessing
                 // Load the image using ImageSharp
                 using Image<Rgb24> imageRaw = Image.Load<Rgb24>(imagePath);
 
                 // Resize the image to 640x640 with padding to maintain aspect ratio and avoid distortion
-                using Image<Rgb24> image = ModelPreprocessing.ResizeWithPadding(imageRaw);
+                using Image<Rgb24> image = Preprocessing.ResizeWithPadding(imageRaw);
 
                 // Create a tensor with shape [1, 3, 640, 640]
-                DenseTensor<byte> inputTensor = new DenseTensor<byte>([1, 3, 640, 640]);
 
                 // Fill the tensor with pixel data from the resized image
-                ModelPreprocessing.PrepareInputTensor(image, inputTensor);
-                #endregion
+                Preprocessing.PrepareInputTensor(image, Config.inputTensor);
 
-                var extractedDigits = ModelInference.ExtractDigits(modelPath, inputTensor);
+                var (sortedDigits, detections) = Inference.ExtractDigits(modelPath, Config.inputTensor, session);
 
                 // Check if there are any detections to draw if not return early
-                if (string.IsNullOrEmpty(extractedDigits.sortedDigits) || extractedDigits.detections is null)
+                if (string.IsNullOrEmpty(sortedDigits) || detections is null)
                 {
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine("\nNo detections found.");
@@ -68,9 +49,9 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
                 }
 
                 // Save image with bounding boxes
-                ModelPostProcessing.DrawDetections(image, string.Concat(LabelMap.OutputFolder, "\\", imageNumber, "_", extractedDigits.sortedDigits.ToString(), "_", Guid.NewGuid().ToString().Substring(0, 7), ".jpeg"), extractedDigits.detections);
+                Postprocessing.DrawDetections(image, string.Concat(Config.OutputFolder, "\\", imageNumber, "_", sortedDigits.ToString(), "_", Guid.NewGuid().ToString().Substring(0, 7), ".jpeg"), detections);
 
-                return extractedDigits.sortedDigits;
+                return sortedDigits;
             }
             catch (Exception ex)
             {
@@ -82,16 +63,20 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
             return string.Empty;
         }
 
-
-
-        public static void Main()
+        static void Main(string[] args)
         {
+            // Ensure the output directory exists and create it if it doesn't
+            if (!Directory.Exists(Config.OutputFolder))
+            {
+                Directory.CreateDirectory(Config.OutputFolder);
+            }
+
             Stopwatch stopwatch = new();
-            int totalTime = 0, i = 0;        
+            int totalTime = 0, i = 0;
             Console.WriteLine("Starting Water Meter Reading Detection...");
 
             // Replace with your actual image folder path
-            string imageFolderPath = LabelMap.InputFolder; // Or provide a direct string path
+            string imageFolderPath = Config.InputFolder; // Or provide a direct string path
 
             // Filter for JPEG and PNG files (you can modify this as needed)
             var imagePaths = Directory.GetFiles(imageFolderPath, "*.*")
@@ -100,24 +85,33 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
                                                   f.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
                                       .ToArray();
 
-            //foreach (string imagePath in imagePaths)
-             foreach (string imagePath in LabelMap.Images)
-            { 
-                Console.ForegroundColor = ConsoleColor.Green;
-                //Console.WriteLine($"\nProcessing {i + 1} of {imagePaths.Length} images: {Path.GetFileName(imagePath)}");
+            string modelPath = Config.ModelPath;
+            // Check if the model file exists
+            if (!File.Exists(modelPath)) {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Model file not found: {modelPath}");
+                Console.ResetColor();
+            }
 
-                Console.WriteLine($"\nProcessing {i + 1} of {LabelMap.Images.Length} images: {Path.GetFileName(imagePath)}");
+            // Load the ONNX model and run inference session
+            using var session = new InferenceSession(modelPath);
+            Inference.WarmUpSession(session);
+
+            foreach (string imagePath in imagePaths)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"\nProcessing {i + 1} of {imagePaths.Length} images: {Path.GetFileName(imagePath)}");
                 Console.ResetColor();
 
                 //Start stopwatch to measure inference time
                 stopwatch.Start();
 
-                string result = ExtractDigits(LabelMap.ModelPath, imagePath, i+1);
+                string result = ExecuteModel(Config.ModelPath, imagePath, i + 1, session);
                 Console.WriteLine($"\nDetected Water Meter Reading: {result}");
                 stopwatch.Stop();
                 Console.WriteLine($"Inference Time: {stopwatch.ElapsedMilliseconds} ms");
                 totalTime += (int)stopwatch.ElapsedMilliseconds;
-                stopwatch.Reset();                
+                stopwatch.Reset();
                 i++;
 
             }

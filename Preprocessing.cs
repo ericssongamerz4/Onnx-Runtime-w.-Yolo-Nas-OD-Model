@@ -5,11 +5,12 @@ using Microsoft.ML.OnnxRuntime.Tensors;
 
 namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 {
-    public class ModelPreprocessing
+    public class Preprocessing
     {
-        public static Image<Rgb24> ResizeWithPadding(Image<Rgb24> image, int targetWidth = 640, int targetHeight = 640)
+        public static Image<Rgb24> ResizeWithPadding(Image<Rgb24> image)
         {
-            Rgb24 paddingColor = new(114, 114, 114);//Gray color
+            int targetWidth = Config.imagewidth;
+            int targetHeight = Config.imageHeight;
 
             float ratio = Math.Min((float)targetWidth / image.Width, (float)targetHeight / image.Height);
             int newWidth = (int)(image.Width * ratio);
@@ -18,7 +19,7 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
             image.Mutate(x => x.Resize(newWidth, newHeight));
 
             // Create a new padded image
-            var paddedImage = new Image<Rgb24>(targetWidth, targetHeight, paddingColor);
+            var paddedImage = new Image<Rgb24>(targetWidth, targetHeight, Config.paddingColor);
 
             // Calculate offsets for centering
             int xOffset = (targetWidth - newWidth) / 2;
@@ -33,10 +34,10 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
             // Fill the tensor with pixel data from the image
             image.ProcessPixelRows(accessor =>
             {
-                for (int y = 0; y < 640; y++)
+                for (int y = 0; y < Config.imageHeight; y++)
                 {
                     var pixelRow = accessor.GetRowSpan(y);
-                    for (int x = 0; x < 640; x++)
+                    for (int x = 0; x < Config.imagewidth; x++)
                     {
                         Rgb24 pixel = pixelRow[x];
                         inputTensor[0, 0, y, x] = pixel.R;
