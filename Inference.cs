@@ -7,7 +7,7 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
     public class Inference
     {
 
-        public static (string? sortedDigits, List<(RectangleF box, string label, float score)>? detections)
+        public static (string? sortedDigits, List<(RectangleF box, string label, float score)>? detections, List<(long clsId, float score)>? allDetections)
             ExtractDigits(string modelPath, DenseTensor<byte> inputTensor, InferenceSession session)
         {
             try
@@ -29,6 +29,8 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
                 var digits = new List<(float xCenter, string digit)>();
                 var detections = new List<(RectangleF box, string label, float score)>();
 
+                List<(long clsId, float score)> allDetections = [];
+
                 for (int i = 0; i < numPreds; i++)
                 {
                     long clsId = classes[i];
@@ -36,6 +38,7 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 
 #if DEBUG
                     Console.WriteLine($"[ALL DETECTIONS] class={clsId}, score={score:F2}");//
+                    allDetections.Add((clsId, score));
 
 #endif
                     // Class 1–10 map to digits 0–9; index 0 is reserved label "digits"
@@ -48,6 +51,7 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
                         float y2 = boxes[i * 4 + 3];
 
                         float xCenter = (x1 + x2) / 2.0f;
+
                         // Convert class ID to digit label, assuming class IDs 1-10 correspond to digits 0-9 and there is a safeguard for unknown classes
                         string digit = Config.Labels.ElementAtOrDefault((int)clsId) ?? "unknown";
 
@@ -68,14 +72,15 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 
                 string sortedDigits = string.Join("", orderedDigits);
 
-                return (sortedDigits, filteredDetections);
+                return (sortedDigits, filteredDetections, allDetections);
             }
             catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"Error during inference: {ex.Message}");
+                Logger.LogError("Inference Error", ex.Message);
                 Console.ResetColor();
-                return (null, null);
+                return (null, null, null);
             }
         }
 
@@ -91,7 +96,5 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
             // Run inference once to warm up
             using var _ = session.Run(inputs);
         }
-
-
     }
 }

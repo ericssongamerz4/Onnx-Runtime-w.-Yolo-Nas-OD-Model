@@ -12,6 +12,7 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 {
     class Program
     {
+        private static readonly Stopwatch stopwatch = new Stopwatch();
 
         public static string ExecuteModel(string modelPath, string imagePath, int imageNumber, InferenceSession session)
         {
@@ -37,7 +38,7 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
                 // Fill the tensor with pixel data from the resized image
                 Preprocessing.PrepareInputTensor(image, Config.inputTensor);
 
-                var (sortedDigits, detections) = Inference.ExtractDigits(modelPath, Config.inputTensor, session);
+                var (sortedDigits, detections, rawDetections) = Inference.ExtractDigits(modelPath, Config.inputTensor, session);
 
                 // Check if there are any detections to draw if not return early
                 if (string.IsNullOrEmpty(sortedDigits) || detections is null)
@@ -51,12 +52,15 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
                 // Save image with bounding boxes
                 Postprocessing.DrawDetections(image, string.Concat(Config.OutputFolder, "\\", imageNumber, "_", sortedDigits.ToString(), "_", Guid.NewGuid().ToString().Substring(0, 7), ".jpeg"), detections);
 
+                Logger.LogResult(Path.GetFileName(imagePath), sortedDigits, ((int)stopwatch.ElapsedMilliseconds), rawDetections);
+
                 return sortedDigits;
             }
             catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"[ERROR] {ex.Message}");
+                Logger.LogError(Path.GetFileName(imagePath), ex.Message);
                 Console.ResetColor();
             }
 
@@ -71,7 +75,6 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
                 Directory.CreateDirectory(Config.OutputFolder);
             }
 
-            Stopwatch stopwatch = new();
             int totalTime = 0, i = 0;
             Console.WriteLine("Starting Water Meter Reading Detection...");
 
@@ -86,10 +89,12 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
                                       .ToArray();
 
             string modelPath = Config.ModelPath;
+
             // Check if the model file exists
             if (!File.Exists(modelPath)) {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"Model file not found: {modelPath}");
+                Logger.LogError("Model loading", $"Model file not found: {modelPath}");
                 Console.ResetColor();
             }
 

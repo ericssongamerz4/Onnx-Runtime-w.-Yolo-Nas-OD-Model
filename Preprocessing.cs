@@ -18,10 +18,8 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 
             image.Mutate(x => x.Resize(newWidth, newHeight));
 
-            // Create a new padded image
             var paddedImage = new Image<Rgb24>(targetWidth, targetHeight, Config.paddingColor);
 
-            // Calculate offsets for centering
             int xOffset = (targetWidth - newWidth) / 2;
             int yOffset = (targetHeight - newHeight) / 2;
 
@@ -31,7 +29,6 @@ namespace Onnx_Runtime_w._Yolo_Nas_OD_Model
 
         public static DenseTensor<byte> PrepareInputTensor(Image<Rgb24> image, DenseTensor<byte> inputTensor)
         {
-            // Fill the tensor with pixel data from the image
             image.ProcessPixelRows(accessor =>
             {
                 for (int y = 0; y < Config.imageHeight; y++)
